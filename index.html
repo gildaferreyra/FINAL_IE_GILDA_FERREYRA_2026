@@ -206,6 +206,10 @@
       min-width: 0;
       min-height: 200px;
       max-width: 100%;
+      touch-action: none;
+      cursor: ew-resize;
+      -webkit-user-select: none;
+      user-select: none;
     }
 
     .result-box {
@@ -334,6 +338,16 @@
     .hint {
       font-size: clamp(0.7rem, 1.8vw, 0.75rem);
     }
+
+    .touch-hint {
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      .touch-hint {
+        display: inline;
+      }
+    }
   </style>
 </head>
 <body>
@@ -382,7 +396,7 @@
 
       <div class="formula-box" style="margin-top: 1rem; border-left-color: var(--success);">
         <div class="title">Cómo usar</div>
-        <div class="hint">Cambia los valores del puente y observa cómo se actualiza la parábola. Mueve el vehículo con <strong>←</strong> y <strong>→</strong> (o escribe la posición). La línea verde muestra la altura del cable sobre el coche.</div>
+        <div class="hint">Cambia los valores del puente y observa cómo se actualiza la parábola. Mueve el vehículo con <strong>←</strong> y <strong>→</strong>, arrastrando con el ratón en el gráfico o con el dedo en móvil. La línea verde muestra la altura del cable sobre el coche.</div>
       </div>
     </aside>
 
@@ -402,10 +416,11 @@
           <span class="unit">m</span>
         </div>
         <div class="keys-hint">
-          <span>Mover vehículo:</span>
+          <span>Mover:</span>
           <span class="key">←</span>
           <span class="key">→</span>
           <span style="color: var(--text-muted);">(Shift = paso mayor)</span>
+          <span class="touch-hint" style="color: var(--text-muted);">· En móvil: arrastra el dedo en el gráfico</span>
         </div>
       </div>
     </section>
@@ -637,6 +652,64 @@
         updateResult();
         draw();
       }
+
+      function clientXToWorld(clientX) {
+        const rect = canvas.getBoundingClientRect();
+        const L = (Number(spanInput.value) || 500) / 2;
+        const width = rect.width;
+        const margin = Math.min(60, width * 0.08);
+        const plotWidth = width - 2 * margin;
+        const localX = clientX - rect.left;
+        if (plotWidth <= 0) return 0;
+        if (localX <= margin) return -L;
+        if (localX >= width - margin) return L;
+        return -L + ((localX - margin) / plotWidth) * (2 * L);
+      }
+
+      function setPositionFromClientX(clientX) {
+        const L = (Number(spanInput.value) || 500) / 2;
+        const worldX = clientXToWorld(clientX);
+        carPosition = Math.max(-L, Math.min(L, worldX));
+        carPositionInput.value = Math.round(carPosition);
+        updateResult();
+        draw();
+      }
+
+      let touchActive = false;
+      canvas.addEventListener('touchstart', function (e) {
+        if (e.touches.length !== 1) return;
+        touchActive = true;
+        setPositionFromClientX(e.touches[0].clientX);
+      }, { passive: false });
+
+      canvas.addEventListener('touchmove', function (e) {
+        if (e.touches.length !== 1 || !touchActive) return;
+        e.preventDefault();
+        setPositionFromClientX(e.touches[0].clientX);
+      }, { passive: false });
+
+      canvas.addEventListener('touchend', function (e) {
+        if (e.touches.length === 0) touchActive = false;
+      }, { passive: true });
+
+      canvas.addEventListener('touchcancel', function (e) {
+        touchActive = false;
+      }, { passive: true });
+
+      let mouseDragging = false;
+      canvas.addEventListener('mousedown', function (e) {
+        if (e.button !== 0) return;
+        mouseDragging = true;
+        setPositionFromClientX(e.clientX);
+      });
+
+      canvas.addEventListener('mousemove', function (e) {
+        if (!mouseDragging) return;
+        setPositionFromClientX(e.clientX);
+      });
+
+      canvas.addEventListener('mouseup', function () { mouseDragging = false; });
+      canvas.addEventListener('mouseleave', function () { mouseDragging = false; });
 
       document.addEventListener('keydown', function (e) {
         if (e.target.tagName === 'INPUT' && e.target.type === 'number') return;
