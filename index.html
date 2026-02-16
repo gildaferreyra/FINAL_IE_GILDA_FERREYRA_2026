@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Puente colgante — Parábola didáctica</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --surface2: #243044;
+      --border: #3d4f6b;
+      --text: #e6edf3;
+      --text-muted: #8b9cb3;
+      --accent: #58a6ff;
+      --accent-soft: rgba(88, 166, 255, 0.15);
+      --success: #3fb950;
+      --warning: #d29922;
+      --road: #4a5568;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    .layout {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1rem 1.5rem;
+      padding-left: max(1rem, env(safe-area-inset-left));
+      padding-right: max(1rem, env(safe-area-inset-right));
+      padding-bottom: max(1rem, env(safe-area-inset-bottom));
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: 320px 1fr;
+      grid-template-rows: auto 1fr;
+      min-height: 100vh;
+    }
+
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto 1fr;
+        padding: 0.75rem 1rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .layout {
+        padding: 0.5rem 0.75rem;
+        gap: 0.75rem;
+      }
+    }
+
+    header {
+      grid-column: 1 / -1;
+      padding: 0.5rem 0;
+      padding-top: max(0.5rem, env(safe-area-inset-top));
+      border-bottom: 1px solid var(--border);
+    }
+
+    header h1 {
+      font-size: clamp(1.1rem, 4vw, 1.5rem);
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.3;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: clamp(0.8rem, 2.5vw, 0.95rem);
+      margin-top: 0.25rem;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+
+    @media (max-width: 480px) {
+      .panel {
+        padding: 1rem;
+        border-radius: 10px;
+      }
+    }
+
+    .panel h2 {
+      font-size: clamp(0.75rem, 2vw, 0.85rem);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+
+    .control-group {
+      margin-bottom: 1rem;
+    }
+
+    .control-group:last-child {
+      margin-bottom: 0;
+    }
+
+    label {
+      display: block;
+      font-size: clamp(0.8rem, 2vw, 0.85rem);
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      min-height: 44px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: clamp(0.85rem, 2vw, 0.9rem);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+    }
+
+    @media (max-width: 480px) {
+      input[type="number"] {
+        padding: 0.65rem 0.75rem;
+        min-height: 48px;
+      }
+    }
+
+    input[type="number"]:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-soft);
+    }
+
+    .hint {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    .graph-container {
+      position: relative;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      min-height: 280px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    @media (max-width: 480px) {
+      .graph-container {
+        border-radius: 10px;
+        min-height: 240px;
+      }
+    }
+
+    .graph-wrapper {
+      flex: 1;
+      position: relative;
+      min-height: 260px;
+      height: min(420px, 50vh);
+    }
+
+    @media (min-width: 901px) {
+      .graph-wrapper {
+        height: 420px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .graph-wrapper {
+        min-height: 220px;
+        height: min(360px, 45vh);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .graph-wrapper {
+        min-height: 200px;
+        height: min(320px, 40vh);
+      }
+    }
+
+    #canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-width: 0;
+      min-height: 200px;
+      max-width: 100%;
+    }
+
+    .result-box {
+      padding: 0.75rem 1rem;
+      background: var(--surface2);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem 1rem;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 600px) {
+      .result-box {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+      }
+    }
+
+    .result-item {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .result-item .label {
+      font-size: clamp(0.8rem, 2vw, 0.85rem);
+      color: var(--text-muted);
+    }
+
+    .result-item .value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: clamp(1rem, 2.5vw, 1.1rem);
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .result-item .unit {
+      font-size: clamp(0.75rem, 2vw, 0.8rem);
+      color: var(--text-muted);
+    }
+
+    .keys-hint {
+      margin-left: auto;
+      font-size: clamp(0.7rem, 2vw, 0.8rem);
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 600px) {
+      .keys-hint {
+        margin-left: 0;
+        margin-top: 0.25rem;
+      }
+    }
+
+    .key {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      min-height: 28px;
+      padding: 0 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    .formula-box {
+      margin-top: 1rem;
+      padding: 0.875rem 1rem;
+      background: var(--surface2);
+      border-radius: 8px;
+      border-left: 3px solid var(--accent);
+    }
+
+    @media (max-width: 480px) {
+      .formula-box {
+        padding: 0.75rem;
+        margin-top: 0.75rem;
+      }
+    }
+
+    .formula-box .title {
+      font-size: clamp(0.75rem, 2vw, 0.8rem);
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+
+    .formula-box code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: clamp(0.8rem, 2vw, 0.85rem);
+      color: var(--text);
+      word-break: break-all;
+    }
+
+    .problem-text {
+      margin-top: 1rem;
+      padding: 0.875rem 1rem;
+      background: rgba(63, 185, 80, 0.08);
+      border: 1px solid rgba(63, 185, 80, 0.3);
+      border-radius: 8px;
+      font-size: clamp(0.8rem, 2vw, 0.9rem);
+      color: var(--text);
+    }
+
+    @media (max-width: 480px) {
+      .problem-text {
+        padding: 0.75rem;
+        margin-top: 0.75rem;
+      }
+    }
+
+    .problem-text strong {
+      color: var(--success);
+    }
+
+    .hint {
+      font-size: clamp(0.7rem, 1.8vw, 0.75rem);
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <header>
+      <h1>Puente colgante — Cable en forma de parábola</h1>
+      <p>Modifica los datos del puente y mueve el vehículo con las flechas para ver cómo cambia la altura bajo el cable.</p>
+    </header>
+
+    <aside class="panel">
+      <h2>Parámetros del puente</h2>
+
+      <div class="control-group">
+        <label for="pillarHeight">Altura de los pilares (m)</label>
+        <input type="number" id="pillarHeight" value="60" min="20" max="150" step="1">
+        <div class="hint">Altura de las torres que sostienen el cable.</div>
+      </div>
+
+      <div class="control-group">
+        <label for="span">Distancia entre pilares (m)</label>
+        <input type="number" id="span" value="500" min="200" max="1000" step="10">
+        <div class="hint">Separación entre las dos torres.</div>
+      </div>
+
+      <div class="control-group">
+        <label for="lowestHeight">Punto más bajo del cable sobre la calzada (m)</label>
+        <input type="number" id="lowestHeight" value="10" min="1" max="50" step="1">
+        <div class="hint">Altura del cable en el centro del puente (vértice de la parábola).</div>
+      </div>
+
+      <div class="control-group">
+        <label for="carPosition">Posición del vehículo desde el centro (m)</label>
+        <input type="number" id="carPosition" value="80" min="-250" max="250" step="5">
+        <div class="hint">Distancia horizontal desde el centro: negativo = izquierda, positivo = derecha.</div>
+      </div>
+
+      <div class="formula-box">
+        <div class="title">Ecuación del cable (parábola)</div>
+        <code id="formulaText">y = a·x² + h</code>
+        <div class="hint" style="margin-top: 0.5rem;">a = (H − h) / L² — donde H = altura pilares, h = punto más bajo, L = mitad del vano.</div>
+      </div>
+
+      <div class="problem-text">
+        <strong>Problema:</strong> ¿A qué altura está el cable sobre un automóvil que está a <strong>80 m</strong> del centro? Pon el vehículo en 80 m (o muévelo con las flechas) y lee la altura en el resultado.
+      </div>
+
+      <div class="formula-box" style="margin-top: 1rem; border-left-color: var(--success);">
+        <div class="title">Cómo usar</div>
+        <div class="hint">Cambia los valores del puente y observa cómo se actualiza la parábola. Mueve el vehículo con <strong>←</strong> y <strong>→</strong> (o escribe la posición). La línea verde muestra la altura del cable sobre el coche.</div>
+      </div>
+    </aside>
+
+    <section class="graph-container">
+      <div class="graph-wrapper">
+        <canvas id="canvas" width="800" height="420"></canvas>
+      </div>
+      <div class="result-box">
+        <div class="result-item">
+          <span class="label">Altura del cable sobre el vehículo:</span>
+          <span class="value" id="heightValue">—</span>
+          <span class="unit">m</span>
+        </div>
+        <div class="result-item">
+          <span class="label">Posición del vehículo (x):</span>
+          <span class="value" id="positionValue">—</span>
+          <span class="unit">m</span>
+        </div>
+        <div class="keys-hint">
+          <span>Mover vehículo:</span>
+          <span class="key">←</span>
+          <span class="key">→</span>
+          <span style="color: var(--text-muted);">(Shift = paso mayor)</span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    (function () {
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      const pillarHeightInput = document.getElementById('pillarHeight');
+      const spanInput = document.getElementById('span');
+      const lowestHeightInput = document.getElementById('lowestHeight');
+      const carPositionInput = document.getElementById('carPosition');
+      const heightValueEl = document.getElementById('heightValue');
+      const positionValueEl = document.getElementById('positionValue');
+      const formulaTextEl = document.getElementById('formulaText');
+
+      let carPosition = 80;
+      let pillarHeight = 60;
+      let span = 500;
+      let lowestHeight = 10;
+
+      function getParams() {
+        pillarHeight = Number(pillarHeightInput.value) || 60;
+        span = Number(spanInput.value) || 500;
+        lowestHeight = Number(lowestHeightInput.value) || 10;
+        carPosition = Number(carPositionInput.value) ?? 80;
+        const L = span / 2;
+        const a = (pillarHeight - lowestHeight) / (L * L);
+        return { pillarHeight, span, lowestHeight, L, a, carPosition };
+      }
+
+      function cableHeight(x, L, a, h) {
+        return a * x * x + h;
+      }
+
+      function toCanvasX(x, L, width) {
+        const margin = Math.min(60, width * 0.08);
+        const plotWidth = width - 2 * margin;
+        return margin + ((x + L) / (2 * L)) * plotWidth;
+      }
+
+      function toCanvasY(y, maxY, height) {
+        const marginTop = Math.min(50, height * 0.1);
+        const marginBottom = Math.min(50, height * 0.12);
+        const plotHeight = height - marginTop - marginBottom;
+        return marginTop + (1 - y / maxY) * plotHeight;
+      }
+
+      function draw() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const rect = canvas.getBoundingClientRect();
+        let cw = Math.round(rect.width * dpr);
+        let ch = Math.round(rect.height * dpr);
+        if (cw < 100) cw = 600;
+        if (ch < 100) ch = 400;
+        if (canvas.width !== cw || canvas.height !== ch) {
+          canvas.width = cw;
+          canvas.height = ch;
+        }
+        const width = canvas.width;
+        const height = canvas.height;
+
+        ctx.clearRect(0, 0, width, height);
+
+        const { pillarHeight: H, span, lowestHeight: h, L, a, carPosition: xCar } = getParams();
+
+        const maxY = Math.max(H + 5, 70);
+        const margin = Math.min(60, width * 0.08);
+        const marginTop = Math.min(50, height * 0.1);
+        const marginBottom = Math.min(50, height * 0.12);
+        const plotWidth = width - 2 * margin;
+        const plotHeight = height - marginTop - marginBottom;
+        const scale = Math.min(1, Math.max(0.5, width / 500));
+
+        function toX(x) { return toCanvasX(x, L, width); }
+        function toY(y) { return toCanvasY(y, maxY, height); }
+
+        // Grid
+        ctx.strokeStyle = 'rgba(61, 79, 107, 0.4)';
+        ctx.lineWidth = 1;
+        for (let i = -L; i <= L; i += 50) {
+          if (i === 0) continue;
+          ctx.beginPath();
+          ctx.moveTo(toX(i), marginTop);
+          ctx.lineTo(toX(i), height - marginBottom);
+          ctx.stroke();
+        }
+        for (let y = 0; y <= maxY; y += 10) {
+          ctx.beginPath();
+          ctx.moveTo(margin, toY(y));
+          ctx.lineTo(width - margin, toY(y));
+          ctx.stroke();
+        }
+
+        // Axis
+        ctx.strokeStyle = '#3d4f6b';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(margin, marginTop);
+        ctx.lineTo(margin, height - marginBottom);
+        ctx.lineTo(width - margin, height - marginBottom);
+        ctx.stroke();
+
+        ctx.fillStyle = '#8b9cb3';
+        const fontSize = Math.round(12 * scale);
+        ctx.font = fontSize + 'px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('0', toX(0), height - marginBottom + Math.max(14, 20 * scale));
+        ctx.fillText('x (m)', width / 2, height - 6);
+        ctx.textAlign = 'right';
+        ctx.fillText('y (m)', margin - 6, marginTop + 4);
+        ctx.fillText(String(maxY), margin - 6, toY(maxY) + 4);
+
+        // Road
+        const roadY = 0;
+        ctx.fillStyle = '#4a5568';
+        ctx.beginPath();
+        ctx.moveTo(toX(-L), toY(0));
+        ctx.lineTo(toX(L), toY(0));
+        ctx.lineTo(toX(L), height);
+        ctx.lineTo(toX(-L), height);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#5a6578';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Parabola (cable)
+        ctx.strokeStyle = '#58a6ff';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        let first = true;
+        for (let x = -L; x <= L; x += 2) {
+          const y = cableHeight(x, L, a, h);
+          if (first) { ctx.moveTo(toX(x), toY(y)); first = false; }
+          else ctx.lineTo(toX(x), toY(y));
+        }
+        ctx.stroke();
+
+        // Pillars
+        ctx.fillStyle = '#243044';
+        ctx.strokeStyle = '#3d4f6b';
+        ctx.lineWidth = Math.max(1, 2 * scale);
+        const pillarWidth = 14 * scale;
+        [-L, L].forEach(x => {
+          const cx = toX(x);
+          ctx.fillRect(cx - pillarWidth / 2, toY(H), pillarWidth, toY(0) - toY(H));
+          ctx.strokeRect(cx - pillarWidth / 2, toY(H), pillarWidth, toY(0) - toY(H));
+        });
+
+        // Car (scaled on small screens)
+        const clampedX = Math.max(-L, Math.min(L, xCar));
+        const carCableY = cableHeight(clampedX, L, a, h);
+        const carCanvasX = toX(clampedX);
+        const carH = 20 * scale;
+        const carW = 48 * scale;
+        const carCanvasY = toY(0) - carH * 0.4;
+
+        ctx.fillStyle = '#d29922';
+        ctx.strokeStyle = '#b8860b';
+        ctx.lineWidth = Math.max(1, 2 * scale);
+        ctx.beginPath();
+        ctx.rect(carCanvasX - carW / 2, carCanvasY - carH / 2, carW, carH);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#1a2332';
+        const wh = 6 * scale;
+        const wy = 4 * scale;
+        ctx.fillRect(carCanvasX - carW / 2 + 6, carCanvasY - wy, wh, wh);
+        ctx.fillRect(carCanvasX + carW / 2 - 6 - wh, carCanvasY - wy, wh, wh);
+
+        // Vertical line from car to cable
+        ctx.setLineDash([4, 4]);
+        ctx.strokeStyle = 'rgba(63, 185, 80, 0.9)';
+        ctx.lineWidth = Math.max(1, 2 * scale);
+        ctx.beginPath();
+        ctx.moveTo(carCanvasX, carCanvasY - carH / 2);
+        ctx.lineTo(carCanvasX, toY(carCableY));
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Cable point above car
+        const dotR = 6 * scale;
+        ctx.fillStyle = '#3fb950';
+        ctx.beginPath();
+        ctx.arc(carCanvasX, toY(carCableY), dotR, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#2ea043';
+        ctx.stroke();
+
+        // Labels
+        const labelFont = Math.round(11 * scale) + 'px "DM Sans", sans-serif';
+        ctx.font = labelFont;
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#d29922';
+        ctx.fillText('Vehículo', carCanvasX, carCanvasY + carH / 2 + 14 * scale);
+        ctx.fillStyle = '#3fb950';
+        ctx.fillText('Cable: ' + carCableY.toFixed(1) + ' m', carCanvasX, toY(carCableY) - dotR - 4);
+      }
+
+      function updateResult() {
+        const params = getParams();
+        const { L, a, lowestHeight: h, carPosition: xCar, pillarHeight: H } = params;
+        const clampedX = Math.max(-L, Math.min(L, xCar));
+        const heightCable = cableHeight(clampedX, L, a, h);
+        heightValueEl.textContent = heightCable.toFixed(2);
+        positionValueEl.textContent = clampedX.toFixed(0);
+
+        const formulaA = ((H - h) / (L * L)).toFixed(6);
+        formulaTextEl.textContent = `y = ${formulaA}·x² + ${h}`;
+      }
+
+      function syncCarFromInput() {
+        carPosition = Number(carPositionInput.value) ?? 80;
+        const L = (Number(spanInput.value) || 500) / 2;
+        carPositionInput.max = L;
+        carPositionInput.min = -L;
+        updateResult();
+        draw();
+      }
+
+      function syncInputsFromParams() {
+        const L = (Number(spanInput.value) || 500) / 2;
+        carPosition = Math.max(-L, Math.min(L, carPosition));
+        carPositionInput.value = Math.round(carPosition);
+        carPositionInput.max = L;
+        carPositionInput.min = -L;
+        updateResult();
+        draw();
+      }
+
+      document.addEventListener('keydown', function (e) {
+        if (e.target.tagName === 'INPUT' && e.target.type === 'number') return;
+        const L = (Number(spanInput.value) || 500) / 2;
+        const step = e.shiftKey ? 20 : 5;
+        if (e.key === 'ArrowLeft') {
+          carPosition = Math.max(-L, carPosition - step);
+          e.preventDefault();
+        } else if (e.key === 'ArrowRight') {
+          carPosition = Math.min(L, carPosition + step);
+          e.preventDefault();
+        } else return;
+        carPositionInput.value = Math.round(carPosition);
+        updateResult();
+        draw();
+      });
+
+      pillarHeightInput.addEventListener('input', syncInputsFromParams);
+      spanInput.addEventListener('input', syncInputsFromParams);
+      lowestHeightInput.addEventListener('input', syncInputsFromParams);
+      carPositionInput.addEventListener('input', syncCarFromInput);
+
+      window.addEventListener('resize', function () {
+        draw();
+      });
+
+      function init() {
+        syncInputsFromParams();
+        requestAnimationFrame(function () {
+          draw();
+          updateResult();
+        });
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
+  </script>
+</body>
+</html>
